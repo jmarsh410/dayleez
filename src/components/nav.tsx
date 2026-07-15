@@ -14,6 +14,7 @@ export async function Nav() {
       {session?.user ? (
         <div className="flex items-center gap-4 text-sm">
           <Link href="/dashboard">Dashboard</Link>
+          <Link href="/change-password">Change password</Link>
           <SignOutButton />
         </div>
       ) : (
