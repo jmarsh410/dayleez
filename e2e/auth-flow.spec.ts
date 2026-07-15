@@ -143,6 +143,40 @@ test.describe("auth flow", () => {
     ).toBeVisible();
   });
 
+  test("logged in user can access and play the miner mining game", async ({
+    page,
+  }) => {
+    const user = uniqueUser();
+
+    await registerViaUi(page, user);
+    await expect(page).toHaveURL("/dashboard");
+
+    await page.getByRole("link", { name: "Miner" }).click();
+    await expect(page).toHaveURL("/miner");
+    await expect(page.getByRole("heading", { name: "Miner" })).toBeVisible();
+
+    const hiddenCells = page.getByRole("button", { name: "Hidden cell" });
+    await expect(hiddenCells).toHaveCount(100);
+
+    await hiddenCells.first().click();
+    await expect(hiddenCells).not.toHaveCount(100);
+
+    await page.getByRole("button", { name: "Revealing" }).click();
+    await expect(
+      page.getByRole("button", { name: "Flagging" }),
+    ).toBeVisible();
+
+    await hiddenCells.first().click();
+    await expect(
+      page.getByRole("button", { name: "Flagged cell" }),
+    ).toHaveCount(1);
+
+    await page.getByRole("button", { name: "Reset" }).click();
+    await expect(
+      page.getByRole("button", { name: "Hidden cell" }),
+    ).toHaveCount(100);
+  });
+
   test("protected routes redirect anonymous users to login", async ({
     page,
   }) => {
@@ -150,6 +184,9 @@ test.describe("auth flow", () => {
     await expect(page).toHaveURL(/\/login(\?.*)?$/);
 
     await page.goto("/change-password");
+    await expect(page).toHaveURL(/\/login(\?.*)?$/);
+
+    await page.goto("/miner");
     await expect(page).toHaveURL(/\/login(\?.*)?$/);
   });
 });
