@@ -2,17 +2,25 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Copy `.env.example` to `.env` and fill in the values (see below), then:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+
+### Database (local Prisma Postgres)
+
+This project uses Prisma with PostgreSQL and Auth.js (NextAuth) for email/password login.
+
+1. Start a local Postgres server (no Docker/account needed):
+   ```bash
+   npx prisma dev
+   ```
+   It prints a `DATABASE_URL` and `SHADOW_DATABASE_URL` — copy the **direct `postgres://...`** ones (not the `prisma+postgres://` one) into `.env`.
+2. Generate an `AUTH_SECRET`: `openssl rand -base64 33`
+3. Apply the schema: `npm run db:push` (uses `prisma db push`; `prisma migrate dev` currently fails against the local `prisma dev` server's shadow-database step)
+4. Start the app: `npm run dev`, then visit `/register` to create an account.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
