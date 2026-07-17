@@ -15,6 +15,7 @@ import {
   type GameStatus,
   type Grid,
 } from "./game-logic";
+import { saveTodaysGame } from "./actions";
 
 function MineIcon() {
   return (
@@ -43,17 +44,31 @@ function FlagIcon() {
   );
 }
 
-export function MiningBoard() {
-  const [grid, setGrid] = useState<Grid>(() => createGrid(GRID_SIZE));
-  const [status, setStatus] = useState<GameStatus>("idle");
+export function MiningBoard({
+  initialGrid,
+  initialStatus,
+}: {
+  initialGrid?: Grid;
+  initialStatus?: GameStatus;
+}) {
+  const [grid, setGrid] = useState<Grid>(() => initialGrid ?? createGrid(GRID_SIZE));
+  const [status, setStatus] = useState<GameStatus>(initialStatus ?? "idle");
   const [flagMode, setFlagMode] = useState(false);
 
   const flagsUsed = useMemo(() => countFlags(grid), [grid]);
   const minesRemaining = MINE_COUNT - flagsUsed;
 
+  function persist(nextGrid: Grid, nextStatus: GameStatus) {
+    saveTodaysGame(nextGrid, nextStatus).catch((err) => {
+      console.error("Failed to save Miner game state", err);
+    });
+  }
+
   function reset() {
-    setGrid(createGrid(GRID_SIZE));
+    const next = createGrid(GRID_SIZE);
+    setGrid(next);
     setStatus("idle");
+    persist(next, "idle");
   }
 
   function toggleFlag(r: number, c: number) {
@@ -63,6 +78,7 @@ export function MiningBoard() {
     const next = cloneGrid(grid);
     next[r][c].state = cell.state === "flagged" ? "hidden" : "flagged";
     setGrid(next);
+    persist(next, status);
   }
 
   function revealCell(r: number, c: number) {
@@ -92,6 +108,7 @@ export function MiningBoard() {
 
     setGrid(next);
     setStatus(nextStatus);
+    persist(next, nextStatus);
   }
 
   function handleCellClick(r: number, c: number) {
@@ -151,6 +168,7 @@ export function MiningBoard() {
               <button
                 key={`${r}-${c}`}
                 type="button"
+                data-testid={`cell-${r}-${c}`}
                 onClick={() => handleCellClick(r, c)}
                 onContextMenu={(e) => handleContextMenu(e, r, c)}
                 disabled={revealed && !cell.isMine && cell.adjacent === 0}
