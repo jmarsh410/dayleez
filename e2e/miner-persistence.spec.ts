@@ -41,8 +41,8 @@ test.describe("miner game persistence", () => {
     const flaggedCells = page.getByRole("button", { name: "Flagged cell" });
     await expect(hiddenCells).toHaveCount(100);
 
-    // Reveal a cell (this places mines and starts the game).
-    await hiddenCells.first().click();
+    // The highlighted safe cell must be the opening move; it starts the game.
+    await page.locator('[data-safe-cell="true"]').click();
     const hiddenAfterReveal = await hiddenCells.count();
     expect(hiddenAfterReveal).toBeLessThan(100);
 
@@ -73,6 +73,9 @@ test.describe("miner game persistence", () => {
 
     const hiddenCells = page.getByRole("button", { name: "Hidden cell" });
 
+    // The safe cell must be clicked first to start the game.
+    await page.locator('[data-safe-cell="true"]').click();
+
     // Reveal cells until a mine is hit (status becomes "lost").
     await expect(async () => {
       const remaining = await hiddenCells.count();
@@ -99,10 +102,10 @@ test.describe("miner game persistence", () => {
     await page.getByRole("link", { name: "Miner" }).click();
     await expect(page).toHaveURL("/miner");
 
-    // The first click starts the game and places mines; cell coordinates are
-    // stable via data-testid, so we can look up the mine layout afterwards
-    // and win legitimately through the UI instead of guessing.
-    await page.getByTestId("cell-0-0").click();
+    // The highlighted safe cell is the required opening move; cell
+    // coordinates are stable via data-testid, so we can look up the mine
+    // layout afterwards and win legitimately through the UI instead of guessing.
+    await page.locator('[data-safe-cell="true"]').click();
     // Give the fire-and-forget save a moment to land before we read it back.
     await page.waitForTimeout(500);
 

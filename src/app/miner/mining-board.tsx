@@ -9,7 +9,6 @@ import {
   countFlags,
   createGrid,
   flagRemainingMines,
-  placeMines,
   revealAllMines,
   revealFlood,
   type GameStatus,
@@ -48,10 +47,10 @@ export function MiningBoard({
   initialGrid,
   initialStatus,
 }: {
-  initialGrid?: Grid;
+  initialGrid: Grid;
   initialStatus?: GameStatus;
 }) {
-  const [grid, setGrid] = useState<Grid>(() => initialGrid ?? createGrid(GRID_SIZE));
+  const [grid, setGrid] = useState<Grid>(initialGrid);
   const [status, setStatus] = useState<GameStatus>(initialStatus ?? "idle");
   const [flagMode, setFlagMode] = useState(false);
 
@@ -65,7 +64,7 @@ export function MiningBoard({
   }
 
   function reset() {
-    const next = createGrid(GRID_SIZE);
+    const next = createGrid(GRID_SIZE, MINE_COUNT);
     setGrid(next);
     setStatus("idle");
     persist(next, "idle");
@@ -84,12 +83,12 @@ export function MiningBoard({
   function revealCell(r: number, c: number) {
     const cell = grid[r][c];
     if (cell.state !== "hidden") return;
+    if (status === "idle" && !cell.isSafe) return;
 
     const next = cloneGrid(grid);
     let nextStatus: GameStatus = status;
 
     if (status === "idle") {
-      placeMines(next, GRID_SIZE, MINE_COUNT, r, c);
       nextStatus = "playing";
     }
 
@@ -131,7 +130,9 @@ export function MiningBoard({
       ? "You win."
       : status === "lost"
         ? "You hit a mine."
-        : `Mines remaining: ${minesRemaining}`;
+        : status === "idle"
+          ? "Click the highlighted cell to begin."
+          : `Mines remaining: ${minesRemaining}`;
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -164,11 +165,13 @@ export function MiningBoard({
         {grid.map((row, r) =>
           row.map((cell, c) => {
             const revealed = cell.state === "revealed";
+            const isSafeStart = status === "idle" && cell.isSafe;
             return (
               <button
                 key={`${r}-${c}`}
                 type="button"
                 data-testid={`cell-${r}-${c}`}
+                data-safe-cell={isSafeStart ? "true" : undefined}
                 onClick={() => handleCellClick(r, c)}
                 onContextMenu={(e) => handleContextMenu(e, r, c)}
                 disabled={revealed && !cell.isMine && cell.adjacent === 0}
@@ -185,7 +188,7 @@ export function MiningBoard({
                 }
                 className={`flex h-8 w-8 items-center justify-center text-sm font-medium ${
                   revealed ? "bg-background" : "bg-background hover:bg-foreground/10"
-                }`}
+                } ${isSafeStart ? "ring-2 ring-inset ring-yellow-400" : ""}`}
               >
                 {cell.state === "flagged" && <FlagIcon />}
                 {revealed && cell.isMine && <MineIcon />}
