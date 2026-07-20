@@ -5,6 +5,7 @@ export type CellState = "hidden" | "revealed" | "flagged";
 
 export interface Cell {
   isMine: boolean;
+  isSafe: boolean;
   adjacent: number;
   state: CellState;
 }
@@ -13,36 +14,45 @@ export type Grid = Cell[][];
 
 export type GameStatus = "idle" | "playing" | "won" | "lost";
 
-export function createGrid(size: number): Grid {
-  return Array.from({ length: size }, () =>
+export function createGrid(size: number, mineCount: number): Grid {
+  const grid: Grid = Array.from({ length: size }, () =>
     Array.from({ length: size }, () => ({
       isMine: false,
+      isSafe: false,
       adjacent: 0,
       state: "hidden" as CellState,
     })),
   );
+
+  placeMines(grid, size, mineCount);
+  chooseSafeCell(grid, size);
+
+  return grid;
+}
+
+// Marks one non-mine cell as the required opening move, so the player always
+// has a guaranteed-safe cell to click first.
+function chooseSafeCell(grid: Grid, size: number) {
+  const candidates: [number, number][] = [];
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      if (!grid[r][c].isMine) candidates.push([r, c]);
+    }
+  }
+
+  const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+  grid[r][c].isSafe = true;
 }
 
 export function cloneGrid(grid: Grid): Grid {
   return grid.map((row) => row.map((cell) => ({ ...cell })));
 }
 
-// Mines are placed on first click so the opening move (and its neighbors)
-// are never a mine.
-export function placeMines(
-  grid: Grid,
-  size: number,
-  mineCount: number,
-  safeRow: number,
-  safeCol: number,
-) {
-  const isSafe = (r: number, c: number) =>
-    Math.abs(r - safeRow) <= 1 && Math.abs(c - safeCol) <= 1;
-
+export function placeMines(grid: Grid, size: number, mineCount: number) {
   const positions: [number, number][] = [];
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
-      if (!isSafe(r, c)) positions.push([r, c]);
+      positions.push([r, c]);
     }
   }
 
