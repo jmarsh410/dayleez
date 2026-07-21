@@ -9,7 +9,7 @@ function startOfToday(): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
 
-export async function loadTodaysGame(): Promise<{
+export async function loadGameForDate(date: Date): Promise<{
   grid: Grid;
   status: GameStatus;
 } | null> {
@@ -17,13 +17,20 @@ export async function loadTodaysGame(): Promise<{
 
   const game = await prisma.minerGame.findUnique({
     where: {
-      userId_date: { userId: session.user.id, date: startOfToday() },
+      userId_date: { userId: session.user.id, date },
     },
   });
 
   if (!game) return null;
 
   return { grid: game.grid as unknown as Grid, status: game.status as GameStatus };
+}
+
+export async function loadTodaysGame(): Promise<{
+  grid: Grid;
+  status: GameStatus;
+} | null> {
+  return loadGameForDate(startOfToday());
 }
 
 export async function saveGameForDate(

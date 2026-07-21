@@ -66,6 +66,40 @@ test.describe("miner save date parameter", () => {
     expect(dates).toEqual(["2026-07-15"]);
   });
 
+  test("/miner/[date] board state survives a page reload", async ({
+    page,
+  }) => {
+    const user = uniqueUser();
+    await registerViaUi(page, user);
+    await expect(page).toHaveURL("/dashboard");
+
+    await page.goto("/miner/2026-07-15");
+    const hiddenCells = page.getByRole("button", { name: "Hidden cell" });
+    const flaggedCells = page.getByRole("button", { name: "Flagged cell" });
+    await expect(hiddenCells).toHaveCount(100);
+
+    // The highlighted safe cell must be the opening move; it starts the game.
+    await page.locator('[data-safe-cell="true"]').click();
+    const hiddenAfterReveal = await hiddenCells.count();
+    expect(hiddenAfterReveal).toBeLessThan(100);
+
+    // Flag a still-hidden cell.
+    await page.getByRole("button", { name: "Revealing" }).click();
+    await hiddenCells.first().click();
+    await expect(flaggedCells).toHaveCount(1);
+
+    const hiddenBeforeReload = await hiddenCells.count();
+
+    // Give the fire-and-forget save a moment to reach the server before reload.
+    await page.waitForTimeout(500);
+    await page.reload();
+
+    // The saved grid (reveals + the flag) should come back exactly as left.
+    await expect(flaggedCells).toHaveCount(1);
+    await expect(hiddenCells).toHaveCount(hiddenBeforeReload);
+    await expect(page.getByRole("button", { name: "Revealing" })).toBeVisible();
+  });
+
   test.afterAll(async () => {
     await db.end();
   });
