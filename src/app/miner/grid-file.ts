@@ -8,6 +8,11 @@ export function todayDateString(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+export function parseDateString(date: string): Date {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
 export async function loadGridForDate(date: string): Promise<Grid | null> {
   if (!DATE_PATTERN.test(date)) return null;
 

@@ -26,9 +26,12 @@ export async function loadTodaysGame(): Promise<{
   return { grid: game.grid as unknown as Grid, status: game.status as GameStatus };
 }
 
-export async function saveTodaysGame(grid: Grid, status: GameStatus): Promise<void> {
+export async function saveGameForDate(
+  grid: Grid,
+  status: GameStatus,
+  date: Date,
+): Promise<void> {
   const session = await verifySession();
-  const date = startOfToday();
 
   await prisma.minerGame.upsert({
     where: {
