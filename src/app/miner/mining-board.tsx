@@ -14,7 +14,7 @@ import {
   type GameStatus,
   type Grid,
 } from "./game-logic";
-import { saveTodaysGame } from "./actions";
+import { saveGameForDate } from "./actions";
 
 function MineIcon() {
   return (
@@ -46,9 +46,11 @@ function FlagIcon() {
 export function MiningBoard({
   initialGrid,
   initialStatus,
+  date,
 }: {
   initialGrid: Grid;
   initialStatus?: GameStatus;
+  date: Date;
 }) {
   const [grid, setGrid] = useState<Grid>(initialGrid);
   const [status, setStatus] = useState<GameStatus>(initialStatus ?? "idle");
@@ -58,7 +60,7 @@ export function MiningBoard({
   const minesRemaining = MINE_COUNT - flagsUsed;
 
   function persist(nextGrid: Grid, nextStatus: GameStatus) {
-    saveTodaysGame(nextGrid, nextStatus).catch((err) => {
+    saveGameForDate(nextGrid, nextStatus, date).catch((err) => {
       console.error("Failed to save Miner game state", err);
     });
   }
