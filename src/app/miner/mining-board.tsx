@@ -7,7 +7,6 @@ import {
   checkWin,
   cloneGrid,
   countFlags,
-  createGrid,
   flagRemainingMines,
   revealAllMines,
   revealFlood,
@@ -63,13 +62,6 @@ export function MiningBoard({
     saveGameForDate(nextGrid, nextStatus, date).catch((err) => {
       console.error("Failed to save Miner game state", err);
     });
-  }
-
-  function reset() {
-    const next = createGrid(GRID_SIZE, MINE_COUNT);
-    setGrid(next);
-    setStatus("idle");
-    persist(next, "idle");
   }
 
   function toggleFlag(r: number, c: number) {
@@ -150,13 +142,6 @@ export function MiningBoard({
           disabled={status === "won" || status === "lost"}
         >
           {flagMode ? "Flagging" : "Revealing"}
-        </button>
-        <button
-          type="button"
-          onClick={reset}
-          className="rounded border border-foreground/20 px-3 py-1"
-        >
-          Reset
         </button>
       </div>
 

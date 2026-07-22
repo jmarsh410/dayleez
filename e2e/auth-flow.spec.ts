@@ -170,11 +170,6 @@ test.describe("auth flow", () => {
     await expect(
       page.getByRole("button", { name: "Flagged cell" }),
     ).toHaveCount(1);
-
-    await page.getByRole("button", { name: "Reset" }).click();
-    await expect(
-      page.getByRole("button", { name: "Hidden cell" }),
-    ).toHaveCount(100);
   });
 
   test("protected routes redirect anonymous users to login", async ({
