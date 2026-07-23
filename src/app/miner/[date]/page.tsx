@@ -36,16 +36,16 @@ export default async function MinerDatePage({
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
+      <MiningBoard
+        initialGrid={grid}
+        initialStatus={savedGame?.status}
+        date={parsedDate}
+      />
       <DateNav
         basePath="/miner"
         currentDateString={date}
         hasPrevious={hasPrevious}
         hasNext={hasNext}
-      />
-      <MiningBoard
-        initialGrid={grid}
-        initialStatus={savedGame?.status}
-        date={parsedDate}
       />
     </main>
   );

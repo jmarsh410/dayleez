@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/auth";
+import { FlyoutMenu } from "./flyout-menu";
 import { SignOutButton } from "./sign-out-button";
 
 export async function Nav() {
@@ -13,10 +14,20 @@ export async function Nav() {
 
       {session?.user ? (
         <div className="flex items-center gap-4 text-sm">
-          <Link href="/dashboard">Dashboard</Link>
-          <Link href="/miner">Miner</Link>
-          <Link href="/digout">Digout</Link>
-          <Link href="/change-password">Change password</Link>
+          <FlyoutMenu
+            label="Games"
+            items={[
+              { href: "/miner", label: "Miner" },
+              { href: "/digout", label: "Digout" },
+            ]}
+          />
+          <FlyoutMenu
+            label="Account"
+            items={[
+              { href: "/dashboard", label: "Dashboard" },
+              { href: "/change-password", label: "Change password" },
+            ]}
+          />
           <SignOutButton />
         </div>
       ) : (
