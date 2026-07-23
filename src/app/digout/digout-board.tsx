@@ -12,43 +12,60 @@ import {
   revealFlood,
   type GameStatus,
   type Grid,
+  type Shape,
+  type ShapeMap,
 } from "./game-logic";
 import { saveGameForDate } from "./actions";
+import { FlagIcon, MineIcon } from "../miner/mining-board";
 
-export function MineIcon() {
+function CircleIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-      <circle cx="12" cy="12" r="6" />
-      <g stroke="currentColor" strokeWidth="2">
-        <line x1="12" y1="1" x2="12" y2="5" />
-        <line x1="12" y1="19" x2="12" y2="23" />
-        <line x1="1" y1="12" x2="5" y2="12" />
-        <line x1="19" y1="12" x2="23" y2="12" />
-        <line x1="4.5" y1="4.5" x2="7" y2="7" />
-        <line x1="17" y1="17" x2="19.5" y2="19.5" />
-        <line x1="4.5" y1="19.5" x2="7" y2="17" />
-        <line x1="17" y1="7" x2="19.5" y2="4.5" />
-      </g>
+      <circle cx="12" cy="12" r="8" />
     </svg>
   );
 }
 
-export function FlagIcon() {
+function DiamondIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-      <line x1="6" y1="3" x2="6" y2="21" strokeLinecap="round" />
-      <path d="M6 4h13l-4.5 4.5L19 13H6" fill="currentColor" stroke="none" />
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+      <polygon points="12,2 22,12 12,22 2,12" />
     </svg>
   );
 }
 
-export function MiningBoard({
+function TriangleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+      <polygon points="12,2 22,21 2,21" />
+    </svg>
+  );
+}
+
+function SquareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+      <rect x="3" y="3" width="18" height="18" />
+    </svg>
+  );
+}
+
+const SHAPE_ICONS: Record<Shape, () => React.JSX.Element> = {
+  circle: CircleIcon,
+  diamond: DiamondIcon,
+  triangle: TriangleIcon,
+  square: SquareIcon,
+};
+
+export function DigoutBoard({
   initialGrid,
   initialStatus,
+  shapeMap,
   date,
 }: {
   initialGrid: Grid;
   initialStatus?: GameStatus;
+  shapeMap: ShapeMap;
   date: Date;
 }) {
   const [grid, setGrid] = useState<Grid>(initialGrid);
@@ -60,7 +77,7 @@ export function MiningBoard({
 
   function persist(nextGrid: Grid, nextStatus: GameStatus) {
     saveGameForDate(nextGrid, nextStatus, date).catch((err) => {
-      console.error("Failed to save Miner game state", err);
+      console.error("Failed to save Digout game state", err);
     });
   }
 
@@ -130,7 +147,7 @@ export function MiningBoard({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <h1 className="text-xl font-semibold">Miner</h1>
+      <h1 className="text-xl font-semibold">Digout</h1>
 
       <div className="flex items-center gap-4 text-sm">
         <span aria-live="polite">{statusText}</span>
@@ -153,6 +170,8 @@ export function MiningBoard({
           row.map((cell, c) => {
             const revealed = cell.state === "revealed";
             const isSafeStart = status === "idle" && cell.isSafe;
+            const shape = cell.adjacent > 0 ? shapeMap[cell.adjacent] : undefined;
+            const ShapeIcon = shape ? SHAPE_ICONS[shape] : undefined;
             return (
               <button
                 key={`${r}-${c}`}
@@ -168,8 +187,8 @@ export function MiningBoard({
                     : revealed
                       ? cell.isMine
                         ? "Mine"
-                        : cell.adjacent > 0
-                          ? `${cell.adjacent} adjacent mines`
+                        : shape
+                          ? `${shape} shape`
                           : "Empty cell"
                       : "Hidden cell"
                 }
@@ -179,7 +198,7 @@ export function MiningBoard({
               >
                 {cell.state === "flagged" && <FlagIcon />}
                 {revealed && cell.isMine && <MineIcon />}
-                {revealed && !cell.isMine && cell.adjacent > 0 && cell.adjacent}
+                {revealed && !cell.isMine && ShapeIcon && <ShapeIcon />}
               </button>
             );
           }),

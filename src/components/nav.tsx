@@ -15,6 +15,7 @@ export async function Nav() {
         <div className="flex items-center gap-4 text-sm">
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/miner">Miner</Link>
+          <Link href="/digout">Digout</Link>
           <Link href="/change-password">Change password</Link>
           <SignOutButton />
         </div>
