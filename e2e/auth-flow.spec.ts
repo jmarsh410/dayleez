@@ -151,6 +151,9 @@ test.describe("auth flow", () => {
     await registerViaUi(page, user);
     await expect(page).toHaveURL("/dashboard");
 
+    // Spoof "today" (see todayDateString in src/app/miner/grid-file.ts) so
+    // this test targets a fixed, known-good grid regardless of the real date.
+    await page.setExtraHTTPHeaders({ "x-mock-today": "2026-07-20" });
     await page.getByRole("link", { name: "Miner" }).click();
     await expect(page).toHaveURL("/miner");
     await expect(page.getByRole("heading", { name: "Miner" })).toBeVisible();
@@ -158,7 +161,8 @@ test.describe("auth flow", () => {
     const hiddenCells = page.getByRole("button", { name: "Hidden cell" });
     await expect(hiddenCells).toHaveCount(100);
 
-    await hiddenCells.first().click();
+    // The highlighted safe cell must be the opening move; it starts the game.
+    await page.locator('[data-safe-cell="true"]').click();
     await expect(hiddenCells).not.toHaveCount(100);
 
     await page.getByRole("button", { name: "Revealing" }).click();
