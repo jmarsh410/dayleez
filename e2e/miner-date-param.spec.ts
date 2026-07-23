@@ -37,18 +37,24 @@ async function gameDatesFor(email: string): Promise<string[]> {
   return rows.map((r) => r.date.toISOString().slice(0, 10));
 }
 
+// A fixed, known-good grid date, spoofed as "today" via the x-mock-today
+// header (see todayDateString in src/app/miner/grid-file.ts) so this test
+// doesn't depend on the real wall clock or on today's grid file existing.
+const MOCK_TODAY = "2026-07-20";
+
 test.describe("miner save date parameter", () => {
   test("/miner saves the game under today's date", async ({ page }) => {
     const user = uniqueUser();
     await registerViaUi(page, user);
     await expect(page).toHaveURL("/dashboard");
 
+    await page.setExtraHTTPHeaders({ "x-mock-today": MOCK_TODAY });
     await page.goto("/miner");
     await page.locator('[data-safe-cell="true"]').click();
     await page.waitForTimeout(500);
 
     const dates = await gameDatesFor(user.email);
-    expect(dates).toEqual(["2026-07-21"]);
+    expect(dates).toEqual([MOCK_TODAY]);
   });
 
   test("/miner/[date] saves the game under that route's date, not today", async ({

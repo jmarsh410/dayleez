@@ -4,11 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import type { GameStatus, Grid } from "./game-logic";
 
-function startOfToday(): Date {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
-
 export async function loadGameForDate(date: Date): Promise<{
   grid: Grid;
   status: GameStatus;
@@ -24,13 +19,6 @@ export async function loadGameForDate(date: Date): Promise<{
   if (!game) return null;
 
   return { grid: game.grid as unknown as Grid, status: game.status as GameStatus };
-}
-
-export async function loadTodaysGame(): Promise<{
-  grid: Grid;
-  status: GameStatus;
-} | null> {
-  return loadGameForDate(startOfToday());
 }
 
 export async function saveGameForDate(
