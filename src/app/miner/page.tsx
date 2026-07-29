@@ -21,20 +21,21 @@ export default async function MinerPage() {
 
   if (!grid) notFound();
 
-  const hasPrevious = (await loadGridForDate(shiftDateString(dateString, -1))) !== null;
+  const hasPrevious =
+    (await loadGridForDate(shiftDateString(dateString, -1))) !== null;
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
+      <MiningBoard
+        initialGrid={grid}
+        initialStatus={savedGame?.status}
+        date={parseDateString(dateString)}
+      />
       <DateNav
         basePath="/miner"
         currentDateString={dateString}
         hasPrevious={hasPrevious}
         hasNext={false}
-      />
-      <MiningBoard
-        initialGrid={grid}
-        initialStatus={savedGame?.status}
-        date={parseDateString(dateString)}
       />
     </main>
   );

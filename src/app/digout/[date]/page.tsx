@@ -37,17 +37,17 @@ export default async function DigoutDatePage({
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
-      <DateNav
-        basePath="/digout"
-        currentDateString={date}
-        hasPrevious={hasPrevious}
-        hasNext={hasNext}
-      />
       <DigoutBoard
         initialGrid={grid}
         initialStatus={savedGame?.status}
         shapeMap={board.shapeMap}
         date={parsedDate}
+      />
+      <DateNav
+        basePath="/digout"
+        currentDateString={date}
+        hasPrevious={hasPrevious}
+        hasNext={hasNext}
       />
     </main>
   );
