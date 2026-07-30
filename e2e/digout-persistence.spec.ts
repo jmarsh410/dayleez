@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { test, expect, type Page } from "@playwright/test";
 import { Client as PgClient } from "pg";
-import { GRID_SIZE } from "../src/app/digout/game-logic";
+import { GRID_SIZE, MAX_MINE_HITS } from "../src/app/digout/game-logic";
 
 const db = new PgClient({ connectionString: process.env.DATABASE_URL });
 const dbReady = db.connect();
@@ -28,6 +28,26 @@ async function registerViaUi(
 
 async function openGamesMenu(page: Page) {
   await page.getByRole("button", { name: "Games" }).hover();
+}
+
+async function mineCoordsFor(email: string): Promise<[number, number][]> {
+  await dbReady;
+  const { rows } = await db.query<{ grid: { isMine: boolean }[][] }>(
+    `SELECT g.grid
+     FROM "DigoutGame" g
+     JOIN "User" u ON u.id = g."userId"
+     WHERE u.email = $1`,
+    [email],
+  );
+  expect(rows).toHaveLength(1);
+  const grid = rows[0].grid;
+  const coords: [number, number][] = [];
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      if (grid[r][c].isMine) coords.push([r, c]);
+    }
+  }
+  return coords;
 }
 
 test.describe("digout game persistence", () => {
@@ -77,27 +97,27 @@ test.describe("digout game persistence", () => {
     await page.getByRole("link", { name: "Digout" }).click();
     await expect(page).toHaveURL("/digout");
 
-    const hiddenCells = page.getByRole("button", { name: "Hidden cell" });
-
     // The safe cell must be clicked first to start the game.
     await page.locator('[data-safe-cell="true"]').click();
+    // Give the fire-and-forget save a moment to land before we read it back.
+    await page.waitForTimeout(500);
 
-    // Reveal cells until a mine is hit (status becomes "lost").
-    await expect(async () => {
-      const remaining = await hiddenCells.count();
-      expect(remaining).toBeGreaterThan(0);
-      await hiddenCells.first().click();
-      await expect(page.getByText("You hit a mine.")).toBeVisible({
-        timeout: 1_000,
-      });
-    }).toPass({ timeout: 30_000 });
+    // Look up the real mine layout so the player can lose deterministically
+    // by clicking exactly MAX_MINE_HITS mines, instead of hunting blindly.
+    const mines = await mineCoordsFor(user.email);
+    expect(mines.length).toBeGreaterThanOrEqual(MAX_MINE_HITS);
 
-    await expect(page.getByText("You hit a mine.")).toBeVisible();
+    for (const [r, c] of mines.slice(0, MAX_MINE_HITS)) {
+      await page.getByTestId(`cell-${r}-${c}`).click();
+    }
+
+    const lostText = `You hit ${MAX_MINE_HITS} mines. Game over.`;
+    await expect(page.getByText(lostText)).toBeVisible();
 
     await page.waitForTimeout(500);
     await page.reload();
 
-    await expect(page.getByText("You hit a mine.")).toBeVisible();
+    await expect(page.getByText(lostText)).toBeVisible();
   });
 
   test("a won game is restored as won after reload", async ({ page }) => {

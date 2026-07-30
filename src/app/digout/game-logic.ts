@@ -15,6 +15,7 @@ export {
 
 export const GRID_SIZE = 5;
 export const MINE_COUNT = 4;
+export const MAX_MINE_HITS = 3;
 
 // Adjacent-mine counts replace numbers with shapes. MINE_COUNT is capped so
 // that no cell can ever have more than 4 adjacent mines, keeping every

@@ -1,7 +1,7 @@
 export const GRID_SIZE = 10;
 export const MINE_COUNT = 15;
 
-export type CellState = "hidden" | "revealed" | "flagged";
+export type CellState = "hidden" | "revealed" | "flagged" | "exploded";
 
 export interface Cell {
   isMine: boolean;

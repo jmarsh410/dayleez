@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { loadGuestState, saveGuestState } from "@/lib/guest-storage";
 import {
   GRID_SIZE,
+  MAX_MINE_HITS,
   MINE_COUNT,
   checkWin,
   cloneGrid,
@@ -51,6 +52,22 @@ function SquareIcon() {
   );
 }
 
+function RedXIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={`h-5 w-5 ${filled ? "text-red-600" : "text-foreground/20"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+    >
+      <line x1="4" y1="4" x2="20" y2="20" />
+      <line x1="20" y1="4" x2="4" y2="20" />
+    </svg>
+  );
+}
+
 const SHAPE_ICONS: Record<Shape, () => React.JSX.Element> = {
   circle: CircleIcon,
   diamond: DiamondIcon,
@@ -94,6 +111,10 @@ export function DigoutBoard({
 
   const flagsUsed = useMemo(() => countFlags(grid), [grid]);
   const minesRemaining = MINE_COUNT - flagsUsed;
+  const mineHits = useMemo(
+    () => grid.flat().filter((cell) => cell.state === "exploded").length,
+    [grid],
+  );
 
   function persist(nextGrid: Grid, nextStatus: GameStatus) {
     if (isLoggedIn) {
@@ -107,7 +128,7 @@ export function DigoutBoard({
 
   function toggleFlag(r: number, c: number) {
     const cell = grid[r][c];
-    if (cell.state === "revealed") return;
+    if (cell.state === "revealed" || cell.state === "exploded") return;
 
     const next = cloneGrid(grid);
     next[r][c].state = cell.state === "flagged" ? "hidden" : "flagged";
@@ -129,9 +150,12 @@ export function DigoutBoard({
 
     const clicked = next[r][c];
     if (clicked.isMine) {
-      clicked.state = "revealed";
-      revealAllMines(next);
-      nextStatus = "lost";
+      clicked.state = "exploded";
+      const hits = next.flat().filter((cell) => cell.state === "exploded").length;
+      if (hits >= MAX_MINE_HITS) {
+        revealAllMines(next);
+        nextStatus = "lost";
+      }
     } else {
       revealFlood(next, GRID_SIZE, r, c);
       if (checkWin(next, GRID_SIZE, MINE_COUNT)) {
@@ -164,7 +188,7 @@ export function DigoutBoard({
     status === "won"
       ? "You win."
       : status === "lost"
-        ? "You hit a mine."
+        ? `You hit ${MAX_MINE_HITS} mines. Game over.`
         : status === "idle"
           ? "Click the highlighted cell to begin."
           : `Mines remaining: ${minesRemaining}`;
@@ -172,6 +196,15 @@ export function DigoutBoard({
   return (
     <div className="flex flex-col items-center gap-4">
       <h1 className="text-xl font-semibold">Digout</h1>
+
+      <div className="flex items-center gap-1" aria-live="polite">
+        <span className="sr-only">
+          Mine hits: {mineHits} of {MAX_MINE_HITS}
+        </span>
+        {Array.from({ length: MAX_MINE_HITS }, (_, i) => (
+          <RedXIcon key={i} filled={i < mineHits} />
+        ))}
+      </div>
 
       <div className="flex items-center gap-4 text-sm">
         <span aria-live="polite">{statusText}</span>
@@ -193,6 +226,7 @@ export function DigoutBoard({
         {grid.map((row, r) =>
           row.map((cell, c) => {
             const revealed = cell.state === "revealed";
+            const exploded = cell.state === "exploded";
             const isSafeStart = status === "idle" && cell.isSafe;
             const shape = cell.adjacent > 0 ? shapeMap[cell.adjacent] : undefined;
             const ShapeIcon = shape ? SHAPE_ICONS[shape] : undefined;
@@ -204,23 +238,28 @@ export function DigoutBoard({
                 data-safe-cell={isSafeStart ? "true" : undefined}
                 onClick={() => handleCellClick(r, c)}
                 onContextMenu={(e) => handleContextMenu(e, r, c)}
-                disabled={revealed && !cell.isMine && cell.adjacent === 0}
+                disabled={exploded || (revealed && !cell.isMine && cell.adjacent === 0)}
                 aria-label={
                   cell.state === "flagged"
                     ? "Flagged cell"
-                    : revealed
-                      ? cell.isMine
-                        ? "Mine"
-                        : shape
-                          ? `${shape} shape`
-                          : "Empty cell"
-                      : "Hidden cell"
+                    : exploded
+                      ? "Mine (hit)"
+                      : revealed
+                        ? cell.isMine
+                          ? "Mine"
+                          : shape
+                            ? `${shape} shape`
+                            : "Empty cell"
+                        : "Hidden cell"
                 }
                 className={`flex h-8 w-8 items-center justify-center text-sm font-medium ${
-                  revealed ? "bg-background" : "bg-background hover:bg-foreground/10"
+                  revealed || exploded
+                    ? "bg-background"
+                    : "bg-background hover:bg-foreground/10"
                 } ${isSafeStart ? "ring-2 ring-inset ring-yellow-400" : ""}`}
               >
                 {cell.state === "flagged" && <FlagIcon />}
+                {exploded && <span className="text-red-600"><MineIcon /></span>}
                 {revealed && cell.isMine && <MineIcon />}
                 {revealed && !cell.isMine && ShapeIcon && <ShapeIcon />}
               </button>
