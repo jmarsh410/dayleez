@@ -15,6 +15,6 @@ export const getOptionalSession = cache(async () => {
 
 export const verifySessionOrRedirectToSignUp = cache(async () => {
   const session = await auth();
-  if (!session?.user) redirect("/register");
+  if (!session?.user) redirect("/register?reason=previous-day");
   return session;
 });
