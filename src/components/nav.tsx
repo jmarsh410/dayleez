@@ -32,6 +32,13 @@ export async function Nav() {
         </div>
       ) : (
         <div className="flex items-center gap-4 text-sm">
+          <FlyoutMenu
+            label="Games"
+            items={[
+              { href: "/miner", label: "Miner" },
+              { href: "/digout", label: "Digout" },
+            ]}
+          />
           <Link href="/login">Log in</Link>
           <Link href="/register">Sign up</Link>
         </div>
