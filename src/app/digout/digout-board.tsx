@@ -6,6 +6,7 @@ import {
   GRID_SIZE,
   MAX_MINE_HITS,
   MINE_COUNT,
+  SHAPES,
   checkWin,
   cloneGrid,
   countFlags,
@@ -78,6 +79,7 @@ const SHAPE_ICONS: Record<Shape, () => React.JSX.Element> = {
 export function DigoutBoard({
   initialGrid,
   initialStatus,
+  initialShapeGuesses,
   shapeMap,
   date,
   dateString,
@@ -85,6 +87,7 @@ export function DigoutBoard({
 }: {
   initialGrid: Grid;
   initialStatus?: GameStatus;
+  initialShapeGuesses?: Partial<Record<Shape, string>>;
   shapeMap: ShapeMap;
   date: Date;
   dateString: string;
@@ -93,19 +96,24 @@ export function DigoutBoard({
   const [grid, setGrid] = useState<Grid>(initialGrid);
   const [status, setStatus] = useState<GameStatus>(initialStatus ?? "idle");
   const [flagMode, setFlagMode] = useState(false);
+  const [shapeGuesses, setShapeGuesses] = useState<Partial<Record<Shape, string>>>(
+    initialShapeGuesses ?? {},
+  );
 
   // localStorage isn't available during SSR, so guest progress can only be
   // restored after mount, not via a lazy useState initializer.
   useEffect(() => {
     if (isLoggedIn) return;
-    const saved = loadGuestState<{ grid: Grid; status: GameStatus }>(
-      "digout",
-      dateString,
-    );
+    const saved = loadGuestState<{
+      grid: Grid;
+      status: GameStatus;
+      shapeGuesses?: Partial<Record<Shape, string>>;
+    }>("digout", dateString);
     if (saved) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setGrid(saved.grid);
       setStatus(saved.status);
+      setShapeGuesses(saved.shapeGuesses ?? {});
     }
   }, [isLoggedIn, dateString]);
 
@@ -115,14 +123,31 @@ export function DigoutBoard({
     () => grid.flat().filter((cell) => cell.state === "exploded").length,
     [grid],
   );
+  const shapesOnBoard = useMemo(() => {
+    const present = new Set<Shape>();
+    for (const row of grid) {
+      for (const cell of row) {
+        if (!cell.isMine && cell.adjacent > 0) present.add(shapeMap[cell.adjacent]);
+      }
+    }
+    return SHAPES.filter((s) => present.has(s));
+  }, [grid, shapeMap]);
 
-  function persist(nextGrid: Grid, nextStatus: GameStatus) {
+  function persist(
+    nextGrid: Grid,
+    nextStatus: GameStatus,
+    nextShapeGuesses: Partial<Record<Shape, string>>,
+  ) {
     if (isLoggedIn) {
-      saveGameForDate(nextGrid, nextStatus, date).catch((err) => {
+      saveGameForDate(nextGrid, nextStatus, date, nextShapeGuesses).catch((err) => {
         console.error("Failed to save Digout game state", err);
       });
     } else {
-      saveGuestState("digout", dateString, { grid: nextGrid, status: nextStatus });
+      saveGuestState("digout", dateString, {
+        grid: nextGrid,
+        status: nextStatus,
+        shapeGuesses: nextShapeGuesses,
+      });
     }
   }
 
@@ -133,7 +158,7 @@ export function DigoutBoard({
     const next = cloneGrid(grid);
     next[r][c].state = cell.state === "flagged" ? "hidden" : "flagged";
     setGrid(next);
-    persist(next, status);
+    persist(next, status, shapeGuesses);
   }
 
   function revealCell(r: number, c: number) {
@@ -166,7 +191,15 @@ export function DigoutBoard({
 
     setGrid(next);
     setStatus(nextStatus);
-    persist(next, nextStatus);
+    persist(next, nextStatus, shapeGuesses);
+  }
+
+  function handleGuessChange(shape: Shape, value: string) {
+    setShapeGuesses((prev) => ({ ...prev, [shape]: value }));
+  }
+
+  function handleGuessBlur() {
+    persist(grid, status, shapeGuesses);
   }
 
   function handleCellClick(r: number, c: number) {
@@ -266,6 +299,31 @@ export function DigoutBoard({
             );
           }),
         )}
+      </div>
+
+      <div className="flex flex-col items-center gap-2">
+        <h2 className="text-sm font-medium">Shape key</h2>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {shapesOnBoard.map((shape) => {
+            const ShapeIcon = SHAPE_ICONS[shape];
+            return (
+              <label key={shape} className="flex items-center gap-2 text-sm">
+                <ShapeIcon />
+                <span>=</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={4}
+                  value={shapeGuesses[shape] ?? ""}
+                  onChange={(e) => handleGuessChange(shape, e.target.value)}
+                  onBlur={handleGuessBlur}
+                  aria-label={`Your guess for the ${shape} shape`}
+                  className="w-14 rounded border border-foreground/20 px-2 py-1 text-center"
+                />
+              </label>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
