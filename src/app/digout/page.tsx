@@ -29,6 +29,7 @@ export default async function DigoutPage() {
       <DigoutBoard
         initialGrid={grid}
         initialStatus={savedGame?.status}
+        initialShapeGuesses={savedGame?.shapeGuesses ?? undefined}
         shapeMap={board.shapeMap}
         date={parseDateString(dateString)}
         dateString={dateString}
