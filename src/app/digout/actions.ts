@@ -1,14 +1,15 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/lib/dal";
+import { getOptionalSession } from "@/lib/dal";
 import type { GameStatus, Grid } from "./game-logic";
 
 export async function loadGameForDate(date: Date): Promise<{
   grid: Grid;
   status: GameStatus;
 } | null> {
-  const session = await verifySession();
+  const session = await getOptionalSession();
+  if (!session) return null;
 
   const game = await prisma.digoutGame.findUnique({
     where: {
@@ -26,7 +27,8 @@ export async function saveGameForDate(
   status: GameStatus,
   date: Date,
 ): Promise<void> {
-  const session = await verifySession();
+  const session = await getOptionalSession();
+  if (!session) return;
 
   await prisma.digoutGame.upsert({
     where: {

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { verifySession } from "@/lib/dal";
+import { verifySessionOrRedirectToSignUp } from "@/lib/dal";
 import { loadGameForDate } from "../actions";
 import {
   isValidDateString,
@@ -16,7 +16,7 @@ export default async function MinerDatePage({
 }: {
   params: Promise<{ date: string }>;
 }) {
-  await verifySession();
+  await verifySessionOrRedirectToSignUp();
   const { date } = await params;
   if (!isValidDateString(date)) notFound();
   const parsedDate = parseDateString(date);
@@ -40,6 +40,8 @@ export default async function MinerDatePage({
         initialGrid={grid}
         initialStatus={savedGame?.status}
         date={parsedDate}
+        dateString={date}
+        isLoggedIn={true}
       />
       <DateNav
         basePath="/miner"

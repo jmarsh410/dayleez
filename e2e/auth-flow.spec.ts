@@ -38,6 +38,14 @@ async function logoutViaUi(page: Page) {
     .click();
 }
 
+async function openGamesMenu(page: Page) {
+  await page.getByRole("button", { name: "Games" }).hover();
+}
+
+async function openAccountMenu(page: Page) {
+  await page.getByRole("button", { name: "Account" }).hover();
+}
+
 test.describe("auth flow", () => {
   test("user can sign up, log in, change password, and log out", async ({
     page,
@@ -63,6 +71,7 @@ test.describe("auth flow", () => {
     });
 
     await test.step("change password", async () => {
+      await openAccountMenu(page);
       await page.getByRole("link", { name: "Change password" }).click();
       await expect(page).toHaveURL("/change-password");
 
@@ -132,6 +141,7 @@ test.describe("auth flow", () => {
     await registerViaUi(page, user);
     await expect(page).toHaveURL("/dashboard");
 
+    await openAccountMenu(page);
     await page.getByRole("link", { name: "Change password" }).click();
     await page.getByLabel("Current password").fill("wrong-current-password");
     await page.getByLabel("New password", { exact: true }).fill(user.newPassword);
@@ -154,6 +164,7 @@ test.describe("auth flow", () => {
     // Spoof "today" (see todayDateString in src/app/miner/grid-file.ts) so
     // this test targets a fixed, known-good grid regardless of the real date.
     await page.setExtraHTTPHeaders({ "x-mock-today": "2026-07-20" });
+    await openGamesMenu(page);
     await page.getByRole("link", { name: "Miner" }).click();
     await expect(page).toHaveURL("/miner");
     await expect(page.getByRole("heading", { name: "Miner" })).toBeVisible();
@@ -184,8 +195,16 @@ test.describe("auth flow", () => {
 
     await page.goto("/change-password");
     await expect(page).toHaveURL(/\/login(\?.*)?$/);
+  });
 
+  test("anonymous users can access today's game but past-date routes redirect to sign up", async ({
+    page,
+  }) => {
     await page.goto("/miner");
-    await expect(page).toHaveURL(/\/login(\?.*)?$/);
+    await expect(page).toHaveURL("/miner");
+    await expect(page.getByRole("heading", { name: "Miner" })).toBeVisible();
+
+    await page.goto("/miner/2026-07-20");
+    await expect(page).toHaveURL(/\/register(\?.*)?$/);
   });
 });

@@ -26,6 +26,10 @@ async function registerViaUi(
   await page.getByRole("button", { name: "Sign up" }).click();
 }
 
+async function openGamesMenu(page: Page) {
+  await page.getByRole("button", { name: "Games" }).hover();
+}
+
 test.describe("miner game persistence", () => {
   test("board state (reveals and flags) survives a page reload", async ({
     page,
@@ -34,6 +38,7 @@ test.describe("miner game persistence", () => {
     await registerViaUi(page, user);
     await expect(page).toHaveURL("/dashboard");
 
+    await openGamesMenu(page);
     await page.getByRole("link", { name: "Miner" }).click();
     await expect(page).toHaveURL("/miner");
 
@@ -68,6 +73,7 @@ test.describe("miner game persistence", () => {
     await registerViaUi(page, user);
     await expect(page).toHaveURL("/dashboard");
 
+    await openGamesMenu(page);
     await page.getByRole("link", { name: "Miner" }).click();
     await expect(page).toHaveURL("/miner");
 
@@ -99,6 +105,7 @@ test.describe("miner game persistence", () => {
     await registerViaUi(page, user);
     await expect(page).toHaveURL("/dashboard");
 
+    await openGamesMenu(page);
     await page.getByRole("link", { name: "Miner" }).click();
     await expect(page).toHaveURL("/miner");
 

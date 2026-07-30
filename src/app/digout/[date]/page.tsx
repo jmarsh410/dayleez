@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { verifySession } from "@/lib/dal";
+import { verifySessionOrRedirectToSignUp } from "@/lib/dal";
 import { loadGameForDate } from "../actions";
 import { loadBoardForDate } from "../grid-file";
 import {
@@ -16,7 +16,7 @@ export default async function DigoutDatePage({
 }: {
   params: Promise<{ date: string }>;
 }) {
-  await verifySession();
+  await verifySessionOrRedirectToSignUp();
   const { date } = await params;
   if (!isValidDateString(date)) notFound();
   const parsedDate = parseDateString(date);
@@ -42,6 +42,8 @@ export default async function DigoutDatePage({
         initialStatus={savedGame?.status}
         shapeMap={board.shapeMap}
         date={parsedDate}
+        dateString={date}
+        isLoggedIn={true}
       />
       <DateNav
         basePath="/digout"

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { verifySession } from "@/lib/dal";
+import { getOptionalSession } from "@/lib/dal";
 import { loadGameForDate } from "./actions";
 import { findClosestPastBoardDate, loadBoardForDate } from "./grid-file";
 import {
@@ -11,7 +11,7 @@ import { DigoutBoard } from "./digout-board";
 import { DateNav } from "@/components/date-nav";
 
 export default async function DigoutPage() {
-  await verifySession();
+  const session = await getOptionalSession();
   const dateString = await findClosestPastBoardDate(await todayDateString());
   if (!dateString) notFound();
 
@@ -31,6 +31,8 @@ export default async function DigoutPage() {
         initialStatus={savedGame?.status}
         shapeMap={board.shapeMap}
         date={parseDateString(dateString)}
+        dateString={dateString}
+        isLoggedIn={!!session}
       />
       <DateNav
         basePath="/digout"

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { verifySession } from "@/lib/dal";
+import { getOptionalSession } from "@/lib/dal";
 import { loadGameForDate } from "./actions";
 import {
   findClosestPastGridDate,
@@ -12,7 +12,7 @@ import { MiningBoard } from "./mining-board";
 import { DateNav } from "@/components/date-nav";
 
 export default async function MinerPage() {
-  await verifySession();
+  const session = await getOptionalSession();
   const dateString = await findClosestPastGridDate(await todayDateString());
   if (!dateString) notFound();
 
@@ -30,6 +30,8 @@ export default async function MinerPage() {
         initialGrid={grid}
         initialStatus={savedGame?.status}
         date={parseDateString(dateString)}
+        dateString={dateString}
+        isLoggedIn={!!session}
       />
       <DateNav
         basePath="/miner"

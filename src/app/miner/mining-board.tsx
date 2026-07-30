@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { loadGuestState, saveGuestState } from "@/lib/guest-storage";
 import {
   GRID_SIZE,
   MINE_COUNT,
@@ -46,22 +47,45 @@ export function MiningBoard({
   initialGrid,
   initialStatus,
   date,
+  dateString,
+  isLoggedIn,
 }: {
   initialGrid: Grid;
   initialStatus?: GameStatus;
   date: Date;
+  dateString: string;
+  isLoggedIn: boolean;
 }) {
   const [grid, setGrid] = useState<Grid>(initialGrid);
   const [status, setStatus] = useState<GameStatus>(initialStatus ?? "idle");
   const [flagMode, setFlagMode] = useState(false);
 
+  // localStorage isn't available during SSR, so guest progress can only be
+  // restored after mount, not via a lazy useState initializer.
+  useEffect(() => {
+    if (isLoggedIn) return;
+    const saved = loadGuestState<{ grid: Grid; status: GameStatus }>(
+      "miner",
+      dateString,
+    );
+    if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setGrid(saved.grid);
+      setStatus(saved.status);
+    }
+  }, [isLoggedIn, dateString]);
+
   const flagsUsed = useMemo(() => countFlags(grid), [grid]);
   const minesRemaining = MINE_COUNT - flagsUsed;
 
   function persist(nextGrid: Grid, nextStatus: GameStatus) {
-    saveGameForDate(nextGrid, nextStatus, date).catch((err) => {
-      console.error("Failed to save Miner game state", err);
-    });
+    if (isLoggedIn) {
+      saveGameForDate(nextGrid, nextStatus, date).catch((err) => {
+        console.error("Failed to save Miner game state", err);
+      });
+    } else {
+      saveGuestState("miner", dateString, { grid: nextGrid, status: nextStatus });
+    }
   }
 
   function toggleFlag(r: number, c: number) {
