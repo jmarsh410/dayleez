@@ -41,6 +41,33 @@ test("date nav sanity check on digout", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Next →" })).toHaveCount(0);
 });
 
+test("date nav sanity check on pshaw", async ({ page }) => {
+  const user = uniqueUser("pshaw");
+  await registerViaUi(page, user);
+  await expect(page).toHaveURL("/dashboard");
+
+  // Pshaw's word files start at today and run forward, so unlike
+  // digout/miner there's no history behind the real current day yet. Pin a
+  // mocked "today" in the middle of the generated range so a previous day
+  // genuinely exists, regardless of when this suite actually runs.
+  const MOCK_TODAY = "2026-08-10";
+  await page.setExtraHTTPHeaders({ "x-mock-today": MOCK_TODAY });
+
+  // Today's page: previous only, no next.
+  await page.goto("/pshaw");
+  await expect(page.getByRole("link", { name: "← Previous" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Next →" })).toHaveCount(0);
+
+  // Follow previous to a past date: should have both previous and next.
+  await page.getByRole("link", { name: "← Previous" }).click();
+  await expect(page.getByRole("link", { name: "← Previous" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Next →" })).toBeVisible();
+
+  // Clicking next should return to the mocked "today", which has no next link.
+  await page.getByRole("link", { name: "Next →" }).click();
+  await expect(page.getByRole("link", { name: "Next →" })).toHaveCount(0);
+});
+
 test("date nav sanity check on miner", async ({ page }) => {
   const user = uniqueUser("miner");
   await registerViaUi(page, user);
