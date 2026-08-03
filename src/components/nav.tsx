@@ -19,6 +19,7 @@ export async function Nav() {
             items={[
               { href: "/miner", label: "Miner" },
               { href: "/digout", label: "Digout" },
+              { href: "/pshaw", label: "Pshaw" },
             ]}
           />
           <FlyoutMenu
@@ -37,6 +38,7 @@ export async function Nav() {
             items={[
               { href: "/miner", label: "Miner" },
               { href: "/digout", label: "Digout" },
+              { href: "/pshaw", label: "Pshaw" },
             ]}
           />
           <Link href="/login">Log in</Link>
