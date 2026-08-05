@@ -18,7 +18,7 @@ export const ONOMATOPOEIA_WORDS = [
   "THWIP", "SNIKT", "THOOM", "VWOOP", "FWOOM", "ZORCH", "BAMPH", "KRAKK",
   "KLANK", "KRASH", "KLONK", "KLUNK", "DOINK", "BOINK", "ZOWIE", "ZOWEE",
   "BRAAP", "GLOOP", "PLOOP", "BZZZT", "VOOMP", "BLURG", "BLARG", "GRAWR",
-  "YAHOO", "YIPEE",
+  "YAHOO", "YIPEE", "PSHAW"
 ] as const;
 
 const WORD_SET = new Set<string>(ONOMATOPOEIA_WORDS);
