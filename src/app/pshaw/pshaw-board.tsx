@@ -12,6 +12,7 @@ import {
   type LetterState,
 } from "./game-logic";
 import { saveGameForDate } from "./actions";
+import { PshawLogo } from "./pshaw-logo";
 
 const KEYBOARD_ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -154,7 +155,8 @@ export function PshawBoard({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <h1 className="text-xl font-semibold">Pshaw</h1>
+      <PshawLogo />
+      <h1 className="sr-only">Pshaw</h1>
       <p className="text-sm text-foreground/70">Guess the 5-letter onomatopoeia.</p>
 
       <div aria-live="polite" className="text-sm font-medium">
