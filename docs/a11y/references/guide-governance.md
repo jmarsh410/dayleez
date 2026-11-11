@@ -73,5 +73,4 @@ Deviations from legal requirements due to severe UI/UX, native platform, or base
 ## 8. External Standards & Engines
 For real-time AI context and developer reference, adhere to these canonical industry standards:
 - **WAI-ARIA APG:** [https://www.w3.org/WAI/ARIA/apg/](https://www.w3.org/WAI/ARIA/apg/)
-- **eBay MIND Patterns:** [https://ebay.github.io/mindpatterns/](https://ebay.github.io/mindpatterns/)
 - **Deque Axe Core:** [https://github.com/dequelabs/axe-core](https://github.com/dequelabs/axe-core)
