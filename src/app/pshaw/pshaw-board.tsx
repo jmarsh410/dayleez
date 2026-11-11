@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { loadGuestState, saveGuestState } from "@/lib/guest-storage";
 import {
   MAX_GUESSES,
@@ -21,15 +21,23 @@ const KEYBOARD_ROWS = [
 ];
 
 const TILE_STATE_CLASSES: Record<LetterState, string> = {
-  correct: "bg-green-600 border-green-600 text-white",
-  present: "bg-yellow-500 border-yellow-500 text-white",
-  absent: "bg-foreground/40 border-foreground/40 text-white",
+  correct: "bg-green-700 border-green-700 text-white",
+  present: "bg-yellow-500 border-yellow-500 text-neutral-900",
+  absent: "bg-neutral-600 border-neutral-600 text-white",
 };
 
 const KEY_STATE_CLASSES: Record<LetterState, string> = {
-  correct: "bg-green-600 text-white",
-  present: "bg-yellow-500 text-white",
-  absent: "bg-foreground/40 text-white",
+  correct: "bg-green-700 text-white",
+  present: "bg-yellow-500 text-neutral-900",
+  absent: "bg-neutral-600 text-white",
+};
+
+// Non-color cue for correct/present so state isn't conveyed by color alone
+// (a11y.md "Semantic Redundancy"). Absent has no glyph by design: it's the
+// muted default state, already distinguished by its own aria-label/text.
+const STATE_GLYPHS: Partial<Record<LetterState, string>> = {
+  correct: "✓",
+  present: "●",
 };
 
 function bestState(a: LetterState | undefined, b: LetterState): LetterState {
@@ -172,7 +180,12 @@ export function PshawBoard({
             : undefined;
 
           return (
-            <div key={r} className="flex gap-1">
+            <div
+              key={r}
+              role="group"
+              aria-label={`Guess ${r + 1} of ${MAX_GUESSES}`}
+              className="flex gap-1"
+            >
               {Array.from({ length: WORD_LENGTH }, (_, c) => {
                 const letter = submittedGuess
                   ? submittedGuess[c]
@@ -182,7 +195,8 @@ export function PshawBoard({
                 const state = states?.[c];
                 const stateClass = state
                   ? TILE_STATE_CLASSES[state]
-                  : "border-foreground/20";
+                  : "border-foreground/60";
+                const glyph = state ? STATE_GLYPHS[state] : undefined;
 
                 return (
                   <div
@@ -191,9 +205,17 @@ export function PshawBoard({
                     aria-label={
                       letter ? `${letter}${state ? ` - ${state}` : ""}` : "Empty tile"
                     }
-                    className={`flex h-12 w-12 items-center justify-center border-2 text-lg font-bold uppercase ${stateClass}`}
+                    className={`relative flex h-12 w-12 items-center justify-center border-2 text-lg font-bold uppercase ${stateClass}`}
                   >
                     {letter ?? ""}
+                    {glyph && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-0.5 left-0.5 text-[10px] leading-none"
+                      >
+                        {glyph}
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -204,7 +226,7 @@ export function PshawBoard({
 
       <div className="flex flex-col gap-1">
         {KEYBOARD_ROWS.map((row, i) => (
-          <div key={i} className="flex justify-center gap-1">
+          <div key={i} className="flex justify-center gap-0.5 sm:gap-1.5">
             {row.map((key) => {
               if (key === "ENTER") {
                 return (
@@ -213,7 +235,7 @@ export function PshawBoard({
                     type="button"
                     onClick={submitGuess}
                     disabled={status !== "playing"}
-                    className="rounded bg-foreground/10 px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                    className="rounded bg-foreground/10 px-2 py-1.5 text-[10px] font-semibold disabled:opacity-50 sm:px-4 sm:py-3 sm:text-sm"
                   >
                     Enter
                   </button>
@@ -227,27 +249,48 @@ export function PshawBoard({
                     aria-label="Backspace"
                     onClick={deleteLetter}
                     disabled={status !== "playing"}
-                    className="rounded bg-foreground/10 px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                    className="rounded bg-foreground/10 px-2 py-1.5 text-[10px] font-semibold disabled:opacity-50 sm:px-4 sm:py-3 sm:text-sm"
                   >
                     ⌫
                   </button>
                 );
               }
               const state = letterStates.get(key);
+              const glyph = state ? STATE_GLYPHS[state] : undefined;
+              // A state suffix goes in an aria-describedby'd sibling, not
+              // aria-label: aria-label would replace the button's accessible
+              // name (just the letter), breaking name-based lookups (by
+              // players and tests alike) once a key has been guessed.
+              const descId = `key-state-${key}`;
               return (
-                <button
-                  key={key}
-                  type="button"
-                  data-testid={`key-${key}`}
-                  data-state={state ?? "unused"}
-                  onClick={() => typeLetter(key)}
-                  disabled={status !== "playing"}
-                  className={`h-10 w-8 rounded text-sm font-semibold disabled:opacity-50 ${
-                    state ? KEY_STATE_CLASSES[state] : "bg-foreground/10"
-                  }`}
-                >
-                  {key}
-                </button>
+                <Fragment key={key}>
+                  <button
+                    type="button"
+                    data-testid={`key-${key}`}
+                    data-state={state ?? "unused"}
+                    aria-describedby={state ? descId : undefined}
+                    onClick={() => typeLetter(key)}
+                    disabled={status !== "playing"}
+                    className={`relative h-9 w-7 rounded text-sm font-semibold disabled:opacity-50 sm:h-12 sm:w-11 ${
+                      state ? KEY_STATE_CLASSES[state] : "bg-foreground/10"
+                    }`}
+                  >
+                    {key}
+                    {glyph && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute top-0 left-0.5 text-[8px] leading-none"
+                      >
+                        {glyph}
+                      </span>
+                    )}
+                  </button>
+                  {state && (
+                    <span id={descId} className="sr-only">
+                      {state}
+                    </span>
+                  )}
+                </Fragment>
               );
             })}
           </div>
